@@ -3,7 +3,7 @@
    with response caching & stale-while-revalidate
    ============================================ */
 
-const API_URL = "http://127.0.0.1:5000";
+const API_URL = "/api";
 
 const APICache = {
   _store: new Map(),

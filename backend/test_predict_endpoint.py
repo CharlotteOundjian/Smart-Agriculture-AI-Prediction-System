@@ -32,7 +32,10 @@ class PredictEndpointTestCase(unittest.TestCase):
         body = response.get_json()
         self.assertTrue(body["success"])
         self.assertIn("prediction", body)
-
+        self.assertIn("CropScores", body["prediction"])
+        scores = body["prediction"]["CropScores"]
+        self.assertEqual(set(scores), {"Cotton", "Maize", "Rice", "Soybean", "Wheat"})
+        self.assertAlmostEqual(sum(scores.values()), 100.0, places=1)
 
 if __name__ == "__main__":
     unittest.main()

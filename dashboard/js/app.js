@@ -303,6 +303,23 @@ const App = {
                 this.setTextContent(id, value === '--' ? '--' : suffix ? `${value}${suffix}` : value);
             }
         }, 'predictionResults');
+        const cropScoresElement = document.getElementById('cropScores');
+        if (cropScoresElement) {
+            cropScoresElement.replaceChildren();
+            const scores = safePrediction.CropScores;
+            if (scores && typeof scores === 'object' && !Array.isArray(scores)) {
+                const cropNames = {
+                    Cotton: 'Coton', Maize: 'Maïs', Rice: 'Riz',
+                    Soybean: 'Soja', Wheat: 'Blé'
+                };
+                for (const [crop, score] of Object.entries(scores).sort((a, b) => b[1] - a[1])) {
+                    if (!Number.isFinite(Number(score))) continue;
+                    const line = document.createElement('div');
+                    line.textContent = `${cropNames[crop] || crop} : ${Number(score).toFixed(2)} %`;
+                    cropScoresElement.appendChild(line);
+                }
+            }
+        }
     },
 
     async _postPredictionTasks(result, formData) {

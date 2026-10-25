@@ -366,6 +366,11 @@ def predict():
                       "rainfall_mm", "humidity_%", "sunlight_hours", "latitude", "longitude", "NDVI_index"]
         crop = crop_model.predict(input_data[crop_cols])[0]
         crop_decoded = encoders["crop_type"].inverse_transform([crop])[0]
+        crop_probabilities = crop_model.predict_proba(input_data[crop_cols])[0]
+        crop_scores = {
+            str(encoders["crop_type"].inverse_transform([int(code)])[0]): round(float(probability) * 100, 2)
+            for code, probability in zip(crop_model.classes_, crop_probabilities)
+        }
         disease_decoded = encoders["crop_disease_status"].inverse_transform([disease])[0]
         confidence = None
         for key in ["disease", "irrigation", "heat", "soil"]:
@@ -406,6 +411,7 @@ def predict():
                 "SoilHealth": soil_decoded, "Fertilizer": fertilizer_decoded,
                 "IrrigationTime": irrigation_time_decoded, "RainImpact": rain_decoded,
                 "FarmEfficiency": farm_decoded, "CropRecommendation": crop_decoded,
+                "CropScores": crop_scores,
                 "PredictionTime": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
                 "ModelVersion": "v1.0", "Confidence": confidence or "N/A",
             },
