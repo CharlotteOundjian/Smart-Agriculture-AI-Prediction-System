@@ -693,6 +693,48 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="page" id="page-crop-advisor">
+                    <div class="page-header">
+                        <div>
+                            <h1 class="page-title">AgriSense Copilot</h1>
+                            <p class="page-subtitle">Explore soil and climate conditions for your farm.</p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>Soil and climate information</h2>
+                        <p>Enter your measurements to receive a basic explanation of the conditions.</p>
+
+                        <form id="cropAdvisorForm">
+                            <label for="nitrogen">Nitrogen (N)</label>
+                            <input id="nitrogen" type="number" step="any" required>
+
+                            <label for="phosphorus">Phosphorus (P)</label>
+                            <input id="phosphorus" type="number" step="any" required>
+
+                            <label for="potassium">Potassium (K)</label>
+                            <input id="potassium" type="number" step="any" required>
+
+                            <label for="temperature">Temperature (°C)</label>
+                            <input id="temperature" type="number" step="any" required>
+
+                            <label for="humidity">Humidity (%)</label>
+                            <input id="humidity" type="number" min="0" max="100" step="any" required>
+
+                            <label for="ph">Soil pH</label>
+                            <input id="ph" type="number" min="0" max="14" step="any" required>
+
+                            <label for="rainfall">Rainfall (mm)</label>
+                            <input id="rainfall" type="number" min="0" step="any" required>
+
+                            <button class="btn btn-primary" type="submit">Explain conditions</button>
+                        </form>
+
+                        <div id="cropAdvisorResults" aria-live="polite"></div>
+                    </div>
+                </div>
+
 
                 <div class="page" id="page-admin-dashboard">
                     <div class="history-hero card">
