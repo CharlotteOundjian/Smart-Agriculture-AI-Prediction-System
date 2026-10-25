@@ -1615,5 +1615,99 @@
     <script src="js/notifications.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/app.js"></script>
+    
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('cropAdvisorForm');
+    const results = document.getElementById('cropAdvisorResults');
+
+    if (!form || !results) return;
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const nitrogen = Number(document.getElementById('nitrogen').value);
+        const phosphorus = Number(document.getElementById('phosphorus').value);
+        const potassium = Number(document.getElementById('potassium').value);
+        const temperature = Number(document.getElementById('temperature').value);
+        const humidity = Number(document.getElementById('humidity').value);
+        const ph = Number(document.getElementById('ph').value);
+        const rainfall = Number(document.getElementById('rainfall').value);
+
+        const messages = [];
+
+        if (nitrogen < 50) {
+            messages.push('Nitrogen: relatively low.');
+        } else if (nitrogen > 150) {
+            messages.push('Nitrogen: relatively high.');
+        } else {
+            messages.push('Nitrogen: middle range.');
+        }
+
+        if (phosphorus < 30) {
+            messages.push('Phosphorus: relatively low.');
+        } else {
+            messages.push('Phosphorus: not low according to this prototype.');
+        }
+
+        if (potassium < 30) {
+            messages.push('Potassium: relatively low.');
+        } else {
+            messages.push('Potassium: not low according to this prototype.');
+        }
+
+        if (temperature < 15) {
+            messages.push('Temperature: relatively cool.');
+        } else if (temperature > 30) {
+            messages.push('Temperature: relatively hot.');
+        } else {
+            messages.push('Temperature: moderate.');
+        }
+
+        messages.push(
+            humidity < 40
+                ? 'Humidity: relatively low.'
+                : 'Humidity: not low according to this prototype.'
+        );
+
+        if (ph < 5.5) {
+            messages.push('Soil pH: acidic.');
+        } else if (ph > 7.5) {
+            messages.push('Soil pH: alkaline.');
+        } else {
+            messages.push('Soil pH: within the prototype’s broad middle range.');
+        }
+
+        messages.push(
+            rainfall < 50
+                ? 'Rainfall: relatively low.'
+                : 'Rainfall: not low according to this prototype.'
+        );
+
+        results.replaceChildren();
+
+        const heading = document.createElement('h3');
+        heading.textContent = 'Your soil and climate overview';
+        results.appendChild(heading);
+
+        const list = document.createElement('ul');
+
+        messages.forEach(function (message) {
+            const item = document.createElement('li');
+            item.textContent = message;
+            list.appendChild(item);
+        });
+
+        results.appendChild(list);
+
+        const note = document.createElement('p');
+        note.textContent =
+            'Prototype only: these thresholds have not been agronomically validated. ' +
+            'Results are not crop recommendations and should not guide farm decisions.';
+        results.appendChild(note);
+    });
+});
+</script>
+
 </body>
 </html>
