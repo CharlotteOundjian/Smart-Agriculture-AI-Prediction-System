@@ -257,6 +257,7 @@ const App = {
         document.querySelectorAll('#cropResult, #yieldResult, #diseaseResult, #irrigationResult, #fertilizerResult, #heatResult, #soilResult, #rainResult, #farmResult, #timeResult').forEach(el => {
             el.textContent = '--';
         });
+        document.getElementById('cropScores')?.replaceChildren();
         this.clearFieldErrors();
         this.updateResultsBadge('', 'Ready');
     },
