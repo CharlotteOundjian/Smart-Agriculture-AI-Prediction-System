@@ -1681,7 +1681,71 @@ function renderCropAnalysis(prediction) {
     });
 
     aiResults.appendChild(list);
+// Explain how changing agricultural conditions affects the AI prediction.
+const sensitivity = prediction?.CropSensitivity;
+addText('p', 'Diagnostic : ' + (
+    Array.isArray(sensitivity)
+        ? sensitivity.length + ' facteurs reçus'
+        : 'champ CropSensitivity absent'
+));
+addText('h3', 'What affects this prediction?');
 
+if (Array.isArray(sensitivity) && sensitivity.length > 0) {
+    const insights = document.createElement('ul');
+
+    sensitivity.slice(0, 3).forEach(function (factor) {
+        const scenarios = factor.scenarios || [];
+
+        if (scenarios.length === 0) return;
+
+        const strongest = [...scenarios].sort(
+            (a, b) =>
+                Math.abs(b.score_change_points) -
+                Math.abs(a.score_change_points)
+        )[0];
+
+        const change = Number(strongest.score_change_points);
+        const cropName = names[bestCrop] || bestCrop;
+
+        const effect = change > 0
+            ? `increases by ${change.toFixed(2)} points`
+            : change < 0
+                ? `decreases by ${Math.abs(change).toFixed(2)} points`
+                : 'does not change';
+
+        const direction = strongest.direction === 'increase'
+            ? 'increases'
+            : 'decreases';
+
+        const newCrop = names[strongest.recommended_crop]
+            || strongest.recommended_crop;
+
+        const item = document.createElement('li');
+
+        item.textContent =
+            `When ${factor.label} ${direction} to ${strongest.tested_value}, ` +
+            `the model score for ${cropName} ${effect}. ` +
+            (strongest.recommended_crop !== bestCrop
+                ? `The recommended crop changes to ${newCrop}.`
+                : 'The recommended crop stays the same.');
+
+        insights.appendChild(item);
+    });
+
+    aiResults.appendChild(insights);
+
+    addText(
+        'p',
+        'These are simulations changing one input at a time. ' +
+        'They do not prove causation or predict real farming outcomes. ' +
+        'Different test ranges are not directly comparable.'
+    );
+} else {
+    addText(
+        'p',
+        'Sensitivity analysis is not available for this prediction.'
+    );
+}
     if (ranking.length > 1) {
         const difference = ranking[0][1] - ranking[1][1];
 

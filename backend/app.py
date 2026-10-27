@@ -370,7 +370,71 @@ def predict():
         crop_scores = {
             str(encoders["crop_type"].inverse_transform([int(code)])[0]): round(float(probability) * 100, 2)
             for code, probability in zip(crop_model.classes_, crop_probabilities)
-        }
+        }        # Local sensitivity analysis: change one feature at a time.
+        sensitivity_tests = [
+            ("soil_moisture_%", "Soil moisture", 5, 0, 100),
+            ("temperature_C", "Temperature", 2, -20, 60),
+            ("rainfall_mm", "Rainfall", 20, 0, 2000),
+            ("soil_pH", "Soil pH", 0.3, 0, 14),
+            ("humidity_%", "Humidity", 5, 0, 100),
+            ("NDVI_index", "Vegetation index", 0.05, -1, 1),
+            ("latitude", "Latitude", 0.5, -90, 90),
+            ("longitude", "Longitude", 0.5, -180, 180),
+        ]
+
+        baseline_crop_index = list(crop_model.classes_).index(crop)
+        crop_sensitivity = []
+
+        for feature, label, step, minimum, maximum in sensitivity_tests:
+            original_value = float(input_data.iloc[0][feature])
+            scenarios = []
+
+            for direction in (-1, 1):
+                new_value = original_value + direction * step
+
+                if not minimum <= new_value <= maximum:
+                    continue
+
+                modified_input = input_data[crop_cols].copy()
+                modified_input.loc[modified_input.index[0], feature] = new_value
+
+                new_probabilities = crop_model.predict_proba(modified_input)[0]
+                new_crop_code = crop_model.classes_[int(np.argmax(new_probabilities))]
+                new_crop_name = encoders["crop_type"].inverse_transform(
+                    [int(new_crop_code)]
+                )[0]
+
+                score_change = (
+                    float(new_probabilities[baseline_crop_index])
+                    - float(crop_probabilities[baseline_crop_index])
+                ) * 100
+
+                scenarios.append({
+                    "direction": "increase" if direction == 1 else "decrease",
+                    "tested_value": round(new_value, 2),
+                    "score_change_points": round(score_change, 2),
+                    "recommended_crop": str(new_crop_name),
+                })
+
+            if scenarios:
+                crop_sensitivity.append({
+                    "feature": feature,
+                    "label": label,
+                    "step": step,
+                    "max_change_points": round(
+                        max(abs(s["score_change_points"]) for s in scenarios), 2
+                    ),
+                    "recommendation_changed": any(
+                        s["recommended_crop"] != str(crop_decoded)
+                        for s in scenarios
+                    ),
+                    "scenarios": scenarios,
+                })
+
+        crop_sensitivity.sort(
+            key=lambda item: item["max_change_points"],
+            reverse=True
+        )
         disease_decoded = encoders["crop_disease_status"].inverse_transform([disease])[0]
         confidence = None
         for key in ["disease", "irrigation", "heat", "soil"]:
@@ -412,6 +476,7 @@ def predict():
                 "IrrigationTime": irrigation_time_decoded, "RainImpact": rain_decoded,
                 "FarmEfficiency": farm_decoded, "CropRecommendation": crop_decoded,
                 "CropScores": crop_scores,
+                 "CropSensitivity": crop_sensitivity,
                 "PredictionTime": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
                 "ModelVersion": "v1.0", "Confidence": confidence or "N/A",
             },
