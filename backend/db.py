@@ -26,7 +26,7 @@ def get_db():
             password=MYSQL_PASSWORD,
             database=MYSQL_DATABASE,
         )
-        cursor = db.cursor()
+        cursor = db.cursor(buffered=True)
         print("✅ Database Connected Successfully")
         return db, cursor
     except Error as exc:

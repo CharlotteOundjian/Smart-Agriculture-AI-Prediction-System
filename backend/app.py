@@ -6,7 +6,8 @@ import os
 import secrets
 from collections import Counter
 from datetime import date, datetime
-
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env"))
 import joblib
 import numpy as np
 import pandas as pd
@@ -446,6 +447,11 @@ def predict():
             original = request.get_json()
             db_conn, db_cursor = get_db()
             if db_cursor and db_conn:
+                def to_mysql_value(value):
+                    if hasattr(value, "item"):
+                        value = value.item()
+                    return value
+
                 db_cursor.execute("""
                     INSERT INTO prediction_history (region, crop_type, soil_moisture, soil_ph, temperature,
                     rainfall, humidity, sunlight_hours, irrigation_type, fertilizer_type,
@@ -453,15 +459,37 @@ def predict():
                     crop_recommendation, predicted_yield, disease_prediction, heat_stress,
                     soil_health, fertilizer_recommendation, irrigation_time, rain_impact, farm_efficiency, confidence)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """, (
-                    original.get("region"), original.get("crop_type"), original.get("soil_moisture_%"),
-                    original.get("soil_pH"), original.get("temperature_C"), original.get("rainfall_mm"),
-                    original.get("humidity_%"), original.get("sunlight_hours"), original.get("irrigation_type"),
-                    original.get("fertilizer_type"), original.get("pesticide_usage_ml"), original.get("total_days"),
-                    original.get("latitude"), original.get("longitude"), original.get("NDVI_index"),
-                    crop_decoded, round(float(yield_prediction), 2), disease_decoded, heat_decoded,
-                    soil_decoded, fertilizer_decoded, irrigation_time_decoded, rain_decoded, farm_decoded, confidence,
+                """, tuple(
+                    to_mysql_value(value)
+                    for value in (
+                        original.get("region"),
+                        original.get("crop_type"),
+                        original.get("soil_moisture_%"),
+                        original.get("soil_pH"),
+                        original.get("temperature_C"),
+                        original.get("rainfall_mm"),
+                        original.get("humidity_%"),
+                        original.get("sunlight_hours"),
+                        original.get("irrigation_type"),
+                        original.get("fertilizer_type"),
+                        original.get("pesticide_usage_ml"),
+                        original.get("total_days"),
+                        original.get("latitude"),
+                        original.get("longitude"),
+                        original.get("NDVI_index"),
+                        crop_decoded,
+                        round(float(yield_prediction), 2),
+                        disease_decoded,
+                        heat_decoded,
+                        soil_decoded,
+                        fertilizer_decoded,
+                        irrigation_time_decoded,
+                        rain_decoded,
+                        farm_decoded,
+                        confidence,
+                    )
                 ))
+
                 db_conn.commit()
                 logger.info("Prediction saved to history")
         except Exception as e:
