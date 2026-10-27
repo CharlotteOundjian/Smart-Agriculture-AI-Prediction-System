@@ -258,6 +258,8 @@ const App = {
             el.textContent = '--';
         });
         document.getElementById('cropScores')?.replaceChildren();
+        this.latestPrediction = null;
+        window.dispatchEvent(new CustomEvent('agrisense:prediction', { detail: null }));
         this.clearFieldErrors();
         this.updateResultsBadge('', 'Ready');
     },
@@ -359,6 +361,8 @@ const App = {
             const result = await API.predictFarm(formData);
             if (result && result.success) {
                 this.updatePredictionResults(result.prediction);
+                this.latestPrediction = result.prediction;
+                window.dispatchEvent(new CustomEvent('agrisense:prediction', { detail: this.latestPrediction }));
                 this.updateResultsBadge('success', 'Complete');
                 Perf.scheduleIdle(() => this._postPredictionTasks(result, formData));
             } else {

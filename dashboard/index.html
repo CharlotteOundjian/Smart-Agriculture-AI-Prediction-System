@@ -734,6 +734,7 @@
                         </form>
 
                         <div id="cropAdvisorResults" aria-live="polite"></div>
+                        <div id="cropAiResults" aria-live="polite"></div>
                     </div>
                 </div>
 
@@ -1624,7 +1625,83 @@ document.addEventListener('DOMContentLoaded', function () {
     const results = document.getElementById('cropAdvisorResults');
 
     if (!form || !results) return;
+const aiResults = document.getElementById('cropAiResults');
 
+function renderCropAnalysis(prediction) {
+    if (!aiResults) return;
+
+    aiResults.replaceChildren();
+
+    function addText(tag, text) {
+        const element = document.createElement(tag);
+        element.textContent = text;
+        aiResults.appendChild(element);
+    }
+
+    const scores = prediction?.CropScores;
+
+    if (!scores || typeof scores !== 'object' || Array.isArray(scores)) {
+        addText('p', 'Run a prediction on the Dashboard to see the AI analysis here.');
+        return;
+    }
+
+    const ranking = Object.entries(scores)
+        .map(([crop, score]) => [crop, Number(score)])
+        .filter(([, score]) => Number.isFinite(score))
+        .sort((a, b) => b[1] - a[1]);
+
+    if (ranking.length === 0) {
+        addText('p', 'Crop scores are unavailable.');
+        return;
+    }
+
+    const names = {
+        Cotton: 'Coton',
+        Maize: 'Maïs',
+        Rice: 'Riz',
+        Soybean: 'Soja',
+        Wheat: 'Blé'
+    };
+
+    addText('h3', 'AI Prediction Analysis');
+
+    const [bestCrop, bestScore] = ranking[0];
+
+    addText(
+        'p',
+        `Highest model score: ${names[bestCrop] || bestCrop} (${bestScore.toFixed(2)}%).`
+    );
+
+    const list = document.createElement('ul');
+
+    ranking.forEach(([crop, score]) => {
+        const item = document.createElement('li');
+        item.textContent = `${names[crop] || crop}: ${score.toFixed(2)}%`;
+        list.appendChild(item);
+    });
+
+    aiResults.appendChild(list);
+
+    if (ranking.length > 1) {
+        const difference = ranking[0][1] - ranking[1][1];
+
+        addText(
+            'p',
+            `The two highest scores differ by ${difference.toFixed(2)} percentage points. This difference does not establish how reliable the recommendation is.`
+        );
+    }
+
+    addText(
+        'p',
+        'These scores come from synthetic training data. They are not real-world crop success probabilities or validated farming advice.'
+    );
+}
+
+window.addEventListener('agrisense:prediction', function (event) {
+    renderCropAnalysis(event.detail);
+});
+
+renderCropAnalysis(null);
     form.addEventListener('submit', function (event) {
         event.preventDefault();
 
