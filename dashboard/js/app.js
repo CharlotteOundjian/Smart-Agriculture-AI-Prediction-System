@@ -318,8 +318,43 @@ const App = {
                 for (const [crop, score] of Object.entries(scores).sort((a, b) => b[1] - a[1])) {
                     if (!Number.isFinite(Number(score))) continue;
                     const line = document.createElement('div');
-                    line.textContent = `${cropNames[crop] || crop} : ${Number(score).toFixed(2)} %`;
-                    cropScoresElement.appendChild(line);
+                    const percentage = Math.max(0, Math.min(100, Number(score)));
+
+line.style.marginBottom = '14px';
+
+const header = document.createElement('div');
+header.style.display = 'flex';
+header.style.justifyContent = 'space-between';
+header.style.alignItems = 'center';
+header.style.marginBottom = '6px';
+
+const label = document.createElement('span');
+label.textContent = cropNames[crop] || crop;
+label.style.fontWeight = '600';
+
+const value = document.createElement('span');
+value.textContent = `${percentage.toFixed(2)} %`;
+value.style.fontWeight = '600';
+
+header.append(label, value);
+
+const track = document.createElement('div');
+track.style.width = '100%';
+track.style.height = '10px';
+track.style.backgroundColor = '#e5e7eb';
+track.style.borderRadius = '999px';
+track.style.overflow = 'hidden';
+
+const bar = document.createElement('div');
+bar.style.width = `${percentage}%`;
+bar.style.height = '100%';
+bar.style.backgroundColor = '#2e7d32';
+bar.style.borderRadius = '999px';
+bar.style.transition = 'width 0.4s ease';
+
+track.appendChild(bar);
+line.append(header, track);
+cropScoresElement.appendChild(line);
                 }
             }
         }
