@@ -382,6 +382,20 @@ def predict():
             original = request.get_json()
             db_conn, db_cursor = get_db()
             if db_cursor and db_conn:
+                import numpy as np
+
+                class MySQLSafeCursor:
+                    def __init__(self, cursor):
+                        self.cursor = cursor
+
+                    def execute(self, query, params):
+                        params = tuple(
+                            v.item() if isinstance(v, np.generic) else v
+                            for v in params
+                        )
+                        return self.cursor.execute(query, params)
+
+                db_cursor = MySQLSafeCursor(db_cursor)
                 db_cursor.execute("""
                     INSERT INTO prediction_history (region, crop_type, soil_moisture, soil_ph, temperature,
                     rainfall, humidity, sunlight_hours, irrigation_type, fertilizer_type,
@@ -549,6 +563,12 @@ def dashboard_stats():
             avg_yield = (cursor.fetchone() or {}).get("avg")
             cursor.execute("SELECT confidence FROM prediction_history WHERE confidence IS NOT NULL")
             conf_rows = cursor.fetchall() or []
+            cursor.execute("""
+                SELECT irrigation_time, soil_health, farm_efficiency,
+                       heat_stress, rain_impact
+                FROM prediction_history
+            """)
+            agricultural_rows = cursor.fetchall() or []
         finally:
             cursor.close()
         conf_vals = []
@@ -571,10 +591,25 @@ def dashboard_stats():
             dv = r.get("d")
             daily.append({"date": dv.strftime("%b %d") if isinstance(dv, datetime) else str(dv), "count": int(r.get("cnt", 0))})
         dist = [{"crop": r.get("crop_recommendation"), "count": int(r.get("cnt", 0))} for r in crop_rows]
+        from collections import Counter as StatsCounter
+        agricultural_stats = {}
+        for column, key in [
+            ("irrigation_time", "average_irrigation"),
+            ("soil_health", "average_soil_health"),
+            ("farm_efficiency", "average_farm_efficiency"),
+            ("heat_stress", "average_heat_stress"),
+            ("rain_impact", "average_rain_impact"),
+        ]:
+            values = [str(r[column]).strip() for r in agricultural_rows
+                      if r.get(column)]
+            agricultural_stats[key] = (
+                StatsCounter(values).most_common(1)[0][0] if values else None
+            )
         def rn(v): return round(float(v), 2) if v is not None else None
         return jsonify({"success": True, "stats": {
             "total_predictions": total, "most_recommended_crop": next(iter(crop_counts)) if crop_counts else None,
             "average_yield": rn(avg_yield), "prediction_accuracy": rn(accuracy),
+            **agricultural_stats,
             "database_size_mb": db_size, "today_predictions": today,
             "daily_predictions": daily, "crop_distribution": dist,
         }})

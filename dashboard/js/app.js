@@ -92,12 +92,12 @@ const App = {
 
     updateStats(stats) {
         Perf.batchDOM(() => {
-            this.animateValue('yieldValue', stats.average_yield, 800, 't/ha');
-            this.animateValue('irrigationValue', stats.average_irrigation, 800, '%');
-            this.animateValue('soilHealthValue', stats.average_soil_health, 800, '%');
-            this.animateValue('efficiencyValue', stats.average_farm_efficiency, 800, '%');
-            this.animateValue('heatStressValue', stats.average_heat_stress, 800, '%');
-            this.animateValue('rainImpactValue', stats.average_rain_impact, 800, '%');
+            this.animateValue('yieldValue', stats.average_yield, 800, 'kg/ha');
+            this.animateValue('irrigationValue', stats.average_irrigation, 800, '');
+            this.animateValue('soilHealthValue', stats.average_soil_health, 800, '');
+            this.animateValue('efficiencyValue', stats.average_farm_efficiency, 800, '');
+            this.animateValue('heatStressValue', stats.average_heat_stress, 800, '');
+            this.animateValue('rainImpactValue', stats.average_rain_impact, 800, '');
         }, 'statsUpdate');
     },
 
@@ -112,9 +112,19 @@ const App = {
         const element = document.getElementById(elementId);
         if (!element) return;
 
+        if (element._animFrameId) {
+            cancelAnimationFrame(element._animFrameId);
+            element._animFrameId = null;
+        }
+
+        if (targetValue === null || targetValue === undefined || targetValue === '') {
+            element.textContent = '--';
+            return;
+        }
+
         const numericTarget = Number(targetValue);
         if (!Number.isFinite(numericTarget)) {
-            element.textContent = '--';
+            element.textContent = String(targetValue);
             return;
         }
 
